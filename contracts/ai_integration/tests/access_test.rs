@@ -22,7 +22,6 @@ fn test_unauthorized_set_anomaly_threshold() {
 
     let random_user = Address::generate(&env);
 
-    // Try to set threshold as unauthorized user
     let result = client.try_set_anomaly_threshold(&random_user, &6000);
     assert_eq!(result, Err(Ok(AiIntegrationError::Unauthorized)));
 }
@@ -33,7 +32,6 @@ fn test_unauthorized_register_provider() {
 
     let random_user = Address::generate(&env);
 
-    // Try to register provider as unauthorized user
     let result = client.try_register_provider(
         &random_user,
         &1,
@@ -49,7 +47,6 @@ fn test_unauthorized_register_provider() {
 fn test_unauthorized_set_provider_status() {
     let (env, client, admin) = setup();
 
-    // First register a provider as admin
     let provider = Address::generate(&env);
     client.register_provider(
         &admin,
@@ -62,7 +59,6 @@ fn test_unauthorized_set_provider_status() {
 
     let random_user = Address::generate(&env);
 
-    // Try to update provider status as unauthorized user
     let result =
         client.try_set_provider_status(&random_user, &1, &ai_integration::ProviderStatus::Paused);
     assert_eq!(result, Err(Ok(AiIntegrationError::Unauthorized)));
@@ -72,7 +68,6 @@ fn test_unauthorized_set_provider_status() {
 fn test_unauthorized_verify_analysis_result() {
     let (env, client, admin) = setup();
 
-    // First create a request and result as admin
     let requester = Address::generate(&env);
     let patient = Address::generate(&env);
     let provider = Address::generate(&env);
@@ -99,13 +94,12 @@ fn test_unauthorized_verify_analysis_result() {
         &provider,
         &request_id,
         &String::from_str(&env, "output-hash"),
-        &9500, // 95% confidence
-        &100,  // 1% anomaly score
+        &9500,
+        &100,
     );
 
     let random_user = Address::generate(&env);
 
-    // Try to verify result as unauthorized user
     let result = client.try_verify_analysis_result(
         &random_user,
         &request_id,
@@ -123,11 +117,9 @@ fn test_unauthorized_initialize() {
     let contract_id = env.register(AiIntegrationContract, ());
     let client = AiIntegrationContractClient::new(&env, &contract_id);
 
-    // First initialize with a legitimate admin
     let admin = Address::generate(&env);
     client.initialize(&admin, &5000);
 
-    // Try to initialize again with a different user
     let random_user = Address::generate(&env);
     let result = client.try_initialize(&random_user, &6000);
     assert_eq!(result, Err(Ok(AiIntegrationError::AlreadyInitialized)));
@@ -137,11 +129,9 @@ fn test_unauthorized_initialize() {
 fn test_authorized_admin_functions_succeed() {
     let (env, client, admin) = setup();
 
-    // Verify admin can successfully call admin functions
     let result = client.try_set_anomaly_threshold(&admin, &6000);
     assert_eq!(result, Ok(Ok(())));
 
-    // Register a provider
     let provider = Address::generate(&env);
     let result = client.try_register_provider(
         &admin,
@@ -153,7 +143,6 @@ fn test_authorized_admin_functions_succeed() {
     );
     assert_eq!(result, Ok(Ok(())));
 
-    // Update provider status
     let result =
         client.try_set_provider_status(&admin, &1, &ai_integration::ProviderStatus::Paused);
     assert_eq!(result, Ok(Ok(())));
@@ -170,7 +159,6 @@ fn test_multiple_unauthorized_users() {
     ];
 
     for user in unauthorized_users {
-        // All unauthorized users should fail on admin functions
         let result = client.try_set_anomaly_threshold(&user, &6000);
         assert_eq!(result, Err(Ok(AiIntegrationError::Unauthorized)));
 
@@ -194,8 +182,6 @@ fn test_multiple_unauthorized_users() {
 fn test_unauthorized_get_admin() {
     let (_env, client, _admin) = setup();
 
-    // get_admin should work for anyone (it's a public read function)
-    // This test ensures it doesn't have authorization requirements
     let admin_result = client.try_get_admin();
     assert_eq!(admin_result.is_ok(), true);
 }
@@ -210,7 +196,6 @@ fn test_uninitialized_contract_rejects_admin_calls() {
 
     let admin = Address::generate(&env);
 
-    // Even admin calls should fail on uninitialized contract
     let result = client.try_set_anomaly_threshold(&admin, &6000);
     assert_eq!(result, Err(Ok(AiIntegrationError::NotInitialized)));
 
